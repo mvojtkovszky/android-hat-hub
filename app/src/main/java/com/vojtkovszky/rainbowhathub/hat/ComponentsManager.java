@@ -1,4 +1,4 @@
-package com.vojtkovszky.rainbowhathub;
+package com.vojtkovszky.rainbowhathub.hat;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -12,13 +12,16 @@ import com.google.android.things.contrib.driver.ht16k33.AlphanumericDisplay;
 import com.google.android.things.contrib.driver.pwmservo.Servo;
 import com.google.android.things.contrib.driver.pwmspeaker.Speaker;
 import com.google.android.things.pio.Gpio;
+import com.vojtkovszky.rainbowhathub.MainActivity;
 
 import java.io.IOException;
 
 /**
- * Created by marcel on 2017-05-25.
+ * Created by mvojtkovszky on 2017-05-25.
+ *
+ * Class responsible for initializing, closing and retrieving all HAT's components
+ * and registering components' callbacks
  */
-
 public class ComponentsManager {
 
     private static final String TAG = ComponentsManager.class.getSimpleName();
@@ -26,18 +29,27 @@ public class ComponentsManager {
     private SensorManager mSensorManager;
 
     public enum Component {
-        DISPLAY, LED_STRIP, SENSOR, BUTTON_LED_RED, BUTTON_LED_GREEN, BUTTON_LED_BLUE,
-        BUTTON_A, BUTTON_B, BUTTON_C, SPEAKER, SERVO
+        DISPLAY,
+        LED_STRIP,
+        SENSORS,
+        BUTTON_LED_BLUE,
+        BUTTON_LED_GREEN,
+        BUTTON_LED_RED,
+        BUTTON_A,
+        BUTTON_B,
+        BUTTON_C,
+        SPEAKER,
+        SERVO
     }
 
-    private AlphanumericDisplay mDisplay;
-    private Apa102 mLedstrip;
-    private Bmx280SensorDriver mEnvironmentalSensorDriver;
-    private Gpio mBlueLed;
-    private Gpio mGreenLed;
-    private Gpio mRedLed;
-    private Speaker mPiezoSpeaker;
-    private Servo mServo;
+    private AlphanumericDisplay display;
+    private Apa102 ledStrip;
+    private Bmx280SensorDriver sensors;
+    private Gpio ledBlue;
+    private Gpio ledGreen;
+    private Gpio ledRed;
+    private Speaker speaker;
+    private Servo servo;
     private Button buttonA;
     private Button buttonB;
     private Button buttonC;
@@ -62,56 +74,56 @@ public class ComponentsManager {
         try {
             switch (component) {
                 case DISPLAY:
-                    mDisplay = RainbowHat.openDisplay();
-                    mDisplay.clear();
+                    display = DriverFactory.openDisplay();
+                    display.clear();
                     break;
 
                 case LED_STRIP:
-                    mLedstrip = RainbowHat.openLedStrip();
-                    mLedstrip.write(new int[7]);
-                    mLedstrip.setBrightness(0);
+                    ledStrip = DriverFactory.openLedStrip();
+                    ledStrip.write(new int[7]);
+                    ledStrip.setBrightness(0);
                     break;
 
-                case SENSOR:
-                    mEnvironmentalSensorDriver = RainbowHat.createSensorDriver();
+                case SENSORS:
+                    sensors = DriverFactory.createSensorDriver();
                     // Register the drivers with the framework
-                    mEnvironmentalSensorDriver.registerTemperatureSensor();
-                    mEnvironmentalSensorDriver.registerPressureSensor();
+                    sensors.registerTemperatureSensor();
+                    sensors.registerPressureSensor();
                     break;
 
                 case BUTTON_LED_RED:
-                    mRedLed = RainbowHat.openLedRed();
-                    mRedLed.setValue(false);
+                    ledRed = DriverFactory.openLedRed();
+                    ledRed.setValue(false);
                     break;
 
                 case BUTTON_LED_GREEN:
-                    mGreenLed = RainbowHat.openLedGreen();
-                    mGreenLed.setValue(false);
+                    ledGreen = DriverFactory.openLedGreen();
+                    ledGreen.setValue(false);
                     break;
 
                 case BUTTON_LED_BLUE:
-                    mBlueLed = RainbowHat.openLedBlue();
-                    mBlueLed.setValue(false);
+                    ledBlue = DriverFactory.openLedBlue();
+                    ledBlue.setValue(false);
                     break;
 
                 case BUTTON_A:
-                    buttonA = RainbowHat.openButtonA();
+                    buttonA = DriverFactory.openButtonA();
                     break;
 
                 case BUTTON_B:
-                    buttonB = RainbowHat.openButtonB();
+                    buttonB = DriverFactory.openButtonB();
                     break;
 
                 case BUTTON_C:
-                    buttonC = RainbowHat.openButtonC();
+                    buttonC = DriverFactory.openButtonC();
                     break;
 
                 case SPEAKER:
-                    mPiezoSpeaker = RainbowHat.openPiezo();
+                    speaker = DriverFactory.openPiezo();
                     break;
 
                 case SERVO:
-                    mServo = RainbowHat.openServo();
+                    servo = DriverFactory.openServo();
                     break;
             }
             Log.d(TAG, "Initialized " + component);
@@ -141,42 +153,42 @@ public class ComponentsManager {
         try {
             switch (component) {
                 case DISPLAY:
-                    if (mDisplay != null) {
-                        mDisplay.clear();
-                        mDisplay.setEnabled(false);
-                        mDisplay.close();
+                    if (display != null) {
+                        display.clear();
+                        display.setEnabled(false);
+                        display.close();
                     }
                     break;
 
                 case LED_STRIP:
-                    if (mLedstrip != null) {
-                        mLedstrip.write(new int[7]);
-                        mLedstrip.setBrightness(0);
-                        mLedstrip.close();
+                    if (ledStrip != null) {
+                        ledStrip.write(new int[7]);
+                        ledStrip.setBrightness(0);
+                        ledStrip.close();
                     }
                     break;
 
-                case SENSOR:
-                    if (mEnvironmentalSensorDriver != null) {
-                        mEnvironmentalSensorDriver.close();
+                case SENSORS:
+                    if (sensors != null) {
+                        sensors.close();
                     }
                     break;
 
                 case BUTTON_LED_BLUE:
-                    if (mBlueLed != null) {
-                        mBlueLed.close();
+                    if (ledBlue != null) {
+                        ledBlue.close();
                     }
                     break;
 
                 case BUTTON_LED_GREEN:
-                    if (mGreenLed != null) {
-                        mGreenLed.close();
+                    if (ledGreen != null) {
+                        ledGreen.close();
                     }
                     break;
 
                 case BUTTON_LED_RED:
-                    if (mRedLed != null) {
-                        mRedLed.close();
+                    if (ledRed != null) {
+                        ledRed.close();
                     }
                     break;
 
@@ -199,14 +211,14 @@ public class ComponentsManager {
                     break;
 
                 case SPEAKER:
-                    if (mPiezoSpeaker != null) {
-                        mPiezoSpeaker.close();
+                    if (speaker != null) {
+                        speaker.close();
                     }
                     break;
 
                 case SERVO:
-                    if (mServo != null) {
-                        mServo.close();
+                    if (servo != null) {
+                        servo.close();
                     }
                     break;
             }
@@ -217,17 +229,17 @@ public class ComponentsManager {
         }
         finally {
             switch (component) {
-                case DISPLAY: mDisplay = null;break;
-                case LED_STRIP: mLedstrip = null; break;
-                case SENSOR: mEnvironmentalSensorDriver = null; break;
-                case BUTTON_LED_BLUE: mBlueLed = null; break;
-                case BUTTON_LED_GREEN: mGreenLed = null; break;
-                case BUTTON_LED_RED: mRedLed = null; break;
+                case DISPLAY: display = null;break;
+                case LED_STRIP: ledStrip = null; break;
+                case SENSORS: sensors = null; break;
+                case BUTTON_LED_BLUE: ledBlue = null; break;
+                case BUTTON_LED_GREEN: ledGreen = null; break;
+                case BUTTON_LED_RED: ledRed = null; break;
                 case BUTTON_A: buttonA = null; break;
                 case BUTTON_B: buttonB = null; break;
                 case BUTTON_C: buttonC = null; break;
-                case SPEAKER: mPiezoSpeaker = null; break;
-                case SERVO: mServo = null; break;
+                case SPEAKER: speaker = null; break;
+                case SERVO: servo = null; break;
             }
         }
     }
@@ -240,35 +252,35 @@ public class ComponentsManager {
     // [BEGIN] Component getters
     //---------------------------
     public AlphanumericDisplay getDisplay() {
-        return mDisplay;
+        return display;
     }
 
     public Apa102 getLedstrip() {
-        return mLedstrip;
+        return ledStrip;
     }
 
-    public Bmx280SensorDriver getEnvironmentalSensorDriver() {
-        return mEnvironmentalSensorDriver;
+    public Bmx280SensorDriver getSensors() {
+        return sensors;
     }
 
     public Gpio getBlueLed() {
-        return mBlueLed;
+        return ledBlue;
     }
 
     public Gpio getGreenLed() {
-        return mGreenLed;
+        return ledGreen;
     }
 
     public Gpio getRedLed() {
-        return mRedLed;
+        return ledRed;
     }
 
-    public Speaker getPiezoSpeaker() {
-        return mPiezoSpeaker;
+    public Speaker getSpeaker() {
+        return speaker;
     }
 
     public Servo getServo() {
-        return mServo;
+        return servo;
     }
 
     public Button getButtonA() {

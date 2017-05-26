@@ -8,10 +8,14 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.google.android.things.contrib.driver.button.Button;
+import com.vojtkovszky.rainbowhathub.hat.ComponentsManager;
 
 import java.io.IOException;
 
-
+/**
+ * Created by mvojtkovszky on 2017-05-26.
+ *
+ */
 public class MainActivity extends Activity implements
         SensorEventListener, WorkingModeHandler.OnModeChangedListener, Button.OnButtonEventListener {
 

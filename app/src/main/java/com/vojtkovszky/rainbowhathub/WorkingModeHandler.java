@@ -3,7 +3,9 @@ package com.vojtkovszky.rainbowhathub;
 import android.util.Log;
 
 /**
- * Created by marcel on 2017-05-25.
+ * Created by mvojtkovszky on 2017-05-25.
+ *
+ * Handling the logic of current active mode.
  */
 
 public class WorkingModeHandler {

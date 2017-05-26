@@ -1,8 +1,4 @@
-package com.vojtkovszky.rainbowhathub;
-
-/**
- * Created by marcel on 2017-05-25.
- */
+package com.vojtkovszky.rainbowhathub.hat;
 
 import android.os.Build;
 
@@ -20,10 +16,12 @@ import com.google.android.things.pio.PeripheralManagerService;
 import java.io.IOException;
 
 /**
+ * Created by mvojtkovszky on 2017-05-25.
+ *
  * Driver factory for the Rainbow Hat.
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
-public class RainbowHat {
+public class DriverFactory {
 
     public static final int DEFAULT_LEDSTRIP_BRIGHTNESS = 1;
 
@@ -39,6 +37,7 @@ public class RainbowHat {
         String getLedG();
         String getLedB();
     }
+
     private static final class Rpi3BoardDefaults implements BoardDefaults {
         public String getI2cBus() { return "I2C1";}
         public String getSpiBus() { return "SPI0.0";}
@@ -51,6 +50,7 @@ public class RainbowHat {
         public String getLedG() { return "BCM19";}
         public String getLedB() { return "BCM26";}
     }
+
     private static final class Imx7BoardDefaults implements BoardDefaults {
         public String getI2cBus() { return "I2C1";}
         public String getSpiBus() { return "SPI3.1";}
@@ -66,7 +66,9 @@ public class RainbowHat {
 
     private static final BoardDefaults BOARD = Build.DEVICE.equals("rpi3") ?
             new Rpi3BoardDefaults() : new Imx7BoardDefaults();
+
     public static final Button.LogicState BUTTON_LOGIC_STATE = Button.LogicState.PRESSED_WHEN_LOW;
+
     public static final int LEDSTRIP_LENGTH = 7;
 
     public static Bmx280 openSensor() throws IOException {
@@ -92,12 +94,15 @@ public class RainbowHat {
     public static Button openButtonA() throws IOException {
         return openButton(BOARD.getButtonA());
     }
+
     public static Button openButtonB() throws IOException {
         return openButton(BOARD.getButtonB());
     }
+
     public static Button openButtonC() throws IOException {
         return openButton(BOARD.getButtonC());
     }
+
     public static Button openButton(String pin) throws IOException {
         return new Button(pin, BUTTON_LOGIC_STATE);
     }
@@ -105,12 +110,15 @@ public class RainbowHat {
     public static ButtonInputDriver createButtonAInputDriver(int keycode) throws IOException {
         return createButtonInputDriver(BOARD.getButtonA(), keycode);
     }
+
     public static ButtonInputDriver createButtonBInputDriver(int keycode) throws IOException {
         return createButtonInputDriver(BOARD.getButtonB(), keycode);
     }
+
     public static ButtonInputDriver createButtonCInputDriver(int keycode) throws IOException {
         return createButtonInputDriver(BOARD.getButtonC(), keycode);
     }
+
     public static ButtonInputDriver createButtonInputDriver(String pin, int keycode) throws IOException {
         return new ButtonInputDriver(pin, BUTTON_LOGIC_STATE, keycode);
     }
@@ -118,12 +126,15 @@ public class RainbowHat {
     public static Gpio openLedRed() throws IOException {
         return openLed(BOARD.getLedR());
     }
+
     public static Gpio openLedGreen() throws IOException {
         return openLed(BOARD.getLedG());
     }
+
     public static Gpio openLedBlue() throws IOException {
         return openLed(BOARD.getLedB());
     }
+
     public static Gpio openLed(String pin) throws IOException {
         PeripheralManagerService pioService = new PeripheralManagerService();
         Gpio ledGpio = pioService.openGpio(pin);
