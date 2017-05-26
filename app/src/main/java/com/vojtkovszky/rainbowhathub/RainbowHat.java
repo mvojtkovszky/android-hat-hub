@@ -1,0 +1,137 @@
+package com.vojtkovszky.rainbowhathub;
+
+/**
+ * Created by marcel on 2017-05-25.
+ */
+
+import android.os.Build;
+
+import com.google.android.things.contrib.driver.apa102.Apa102;
+import com.google.android.things.contrib.driver.bmx280.Bmx280;
+import com.google.android.things.contrib.driver.bmx280.Bmx280SensorDriver;
+import com.google.android.things.contrib.driver.button.Button;
+import com.google.android.things.contrib.driver.button.ButtonInputDriver;
+import com.google.android.things.contrib.driver.ht16k33.AlphanumericDisplay;
+import com.google.android.things.contrib.driver.pwmservo.Servo;
+import com.google.android.things.contrib.driver.pwmspeaker.Speaker;
+import com.google.android.things.pio.Gpio;
+import com.google.android.things.pio.PeripheralManagerService;
+
+import java.io.IOException;
+
+/**
+ * Driver factory for the Rainbow Hat.
+ */
+@SuppressWarnings({"unused", "WeakerAccess"})
+public class RainbowHat {
+
+    public static final int DEFAULT_LEDSTRIP_BRIGHTNESS = 1;
+
+    private interface BoardDefaults {
+        String getI2cBus();
+        String getSpiBus();
+        String getPiezoPwm();
+        String getServoPwm();
+        String getButtonA();
+        String getButtonB();
+        String getButtonC();
+        String getLedR();
+        String getLedG();
+        String getLedB();
+    }
+    private static final class Rpi3BoardDefaults implements BoardDefaults {
+        public String getI2cBus() { return "I2C1";}
+        public String getSpiBus() { return "SPI0.0";}
+        public String getPiezoPwm() { return "PWM1";}
+        public String getServoPwm() { return "PWM0";}
+        public String getButtonA() { return "BCM21";}
+        public String getButtonB() { return "BCM20";}
+        public String getButtonC() { return "BCM16";}
+        public String getLedR() { return "BCM6";}
+        public String getLedG() { return "BCM19";}
+        public String getLedB() { return "BCM26";}
+    }
+    private static final class Imx7BoardDefaults implements BoardDefaults {
+        public String getI2cBus() { return "I2C1";}
+        public String getSpiBus() { return "SPI3.1";}
+        public String getPiezoPwm() { return "PWM2";}
+        public String getServoPwm() { return "PWM1";}
+        public String getButtonA() { return "GPIO_174";}
+        public String getButtonB() { return "GPIO_175";}
+        public String getButtonC() { return "GPIO_39";}
+        public String getLedR() { return "GPIO_34";}
+        public String getLedG() { return "GPIO_32";}
+        public String getLedB() { return "GPIO_37";}
+    }
+
+    private static final BoardDefaults BOARD = Build.DEVICE.equals("rpi3") ?
+            new Rpi3BoardDefaults() : new Imx7BoardDefaults();
+    public static final Button.LogicState BUTTON_LOGIC_STATE = Button.LogicState.PRESSED_WHEN_LOW;
+    public static final int LEDSTRIP_LENGTH = 7;
+
+    public static Bmx280 openSensor() throws IOException {
+        return new Bmx280(BOARD.getI2cBus());
+    }
+
+    public static Bmx280SensorDriver createSensorDriver() throws IOException {
+        return new Bmx280SensorDriver(BOARD.getI2cBus());
+    }
+
+    public static AlphanumericDisplay openDisplay() throws IOException {
+        return new AlphanumericDisplay(BOARD.getI2cBus());
+    }
+
+    public static Speaker openPiezo() throws IOException {
+        return new Speaker(BOARD.getPiezoPwm());
+    }
+
+    public static Servo openServo() throws IOException {
+        return new Servo(BOARD.getServoPwm());
+    }
+
+    public static Button openButtonA() throws IOException {
+        return openButton(BOARD.getButtonA());
+    }
+    public static Button openButtonB() throws IOException {
+        return openButton(BOARD.getButtonB());
+    }
+    public static Button openButtonC() throws IOException {
+        return openButton(BOARD.getButtonC());
+    }
+    public static Button openButton(String pin) throws IOException {
+        return new Button(pin, BUTTON_LOGIC_STATE);
+    }
+
+    public static ButtonInputDriver createButtonAInputDriver(int keycode) throws IOException {
+        return createButtonInputDriver(BOARD.getButtonA(), keycode);
+    }
+    public static ButtonInputDriver createButtonBInputDriver(int keycode) throws IOException {
+        return createButtonInputDriver(BOARD.getButtonB(), keycode);
+    }
+    public static ButtonInputDriver createButtonCInputDriver(int keycode) throws IOException {
+        return createButtonInputDriver(BOARD.getButtonC(), keycode);
+    }
+    public static ButtonInputDriver createButtonInputDriver(String pin, int keycode) throws IOException {
+        return new ButtonInputDriver(pin, BUTTON_LOGIC_STATE, keycode);
+    }
+
+    public static Gpio openLedRed() throws IOException {
+        return openLed(BOARD.getLedR());
+    }
+    public static Gpio openLedGreen() throws IOException {
+        return openLed(BOARD.getLedG());
+    }
+    public static Gpio openLedBlue() throws IOException {
+        return openLed(BOARD.getLedB());
+    }
+    public static Gpio openLed(String pin) throws IOException {
+        PeripheralManagerService pioService = new PeripheralManagerService();
+        Gpio ledGpio = pioService.openGpio(pin);
+        ledGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+        return ledGpio;
+    }
+
+    public static Apa102 openLedStrip() throws IOException {
+        return new Apa102(BOARD.getSpiBus(), Apa102.Mode.BGR);
+    }
+}
