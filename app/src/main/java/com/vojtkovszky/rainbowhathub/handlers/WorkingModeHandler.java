@@ -1,4 +1,4 @@
-package com.vojtkovszky.rainbowhathub;
+package com.vojtkovszky.rainbowhathub.handlers;
 
 import android.util.Log;
 
@@ -12,7 +12,7 @@ public class WorkingModeHandler {
 
     private static final String TAG = WorkingModeHandler.class.getSimpleName();
 
-    enum WorkingMode {
+    public enum WorkingMode {
         MODE_OFF,
         MODE_TEMPERATURE,
         MODE_PRESSURE

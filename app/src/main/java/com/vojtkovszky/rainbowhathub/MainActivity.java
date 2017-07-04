@@ -8,6 +8,9 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.google.android.things.contrib.driver.button.Button;
+import com.vojtkovszky.rainbowhathub.handlers.RainbowBumpHandler;
+import com.vojtkovszky.rainbowhathub.handlers.SpeakerTonesHandler;
+import com.vojtkovszky.rainbowhathub.handlers.WorkingModeHandler;
 import com.vojtkovszky.rainbowhathub.hat.ComponentsManager;
 
 import java.io.IOException;
@@ -15,45 +18,57 @@ import java.io.IOException;
 /**
  * Created by mvojtkovszky on 2017-05-26.
  *
+ * Handling all interaction and user experience here:
+ * The logic goes like this:
+ * - When the app starts, everything is off
+ * - Pressing any capacitive button will light the led above it.
+ * - Pressing capacitive button A will toggle between different working modes,
+ *   defined in {@link WorkingModeHandler.WorkingMode}, showing result on display
+ * - Pressing capacitive button B will light up led strip with random colours. // TODO
+ * - Pressing capacitive button C will play a random tone. // TODO
  */
 public class MainActivity extends Activity implements
         SensorEventListener, WorkingModeHandler.OnModeChangedListener, Button.OnButtonEventListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private ComponentsManager mComponentsManager;
-    private WorkingModeHandler mWorkingModeHandler;
+    private ComponentsManager componentsManager;
+
+    private WorkingModeHandler workingModeHandler;
+    private RainbowBumpHandler rainbowBumpHandler;
+    private SpeakerTonesHandler speakerTonesHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.d(TAG, "Weather Station Started");
+        componentsManager = new ComponentsManager(this);
+        componentsManager.initAll();
 
-        mComponentsManager = new ComponentsManager(this);
-        mComponentsManager.initAll();
+        workingModeHandler = new WorkingModeHandler(WorkingModeHandler.WorkingMode.MODE_OFF);
+        rainbowBumpHandler = new RainbowBumpHandler(componentsManager.getLedstrip());
+        speakerTonesHandler = new SpeakerTonesHandler(componentsManager.getSpeaker());
 
-        mWorkingModeHandler = new WorkingModeHandler(WorkingModeHandler.WorkingMode.MODE_OFF);
-        mWorkingModeHandler.setOnModeChangedListener(this);
+        workingModeHandler.setOnModeChangedListener(this);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        mComponentsManager.registerSensors(this);
-        mComponentsManager.setButtonListeners(this);
+        componentsManager.registerSensors(this);
+        componentsManager.setButtonListeners(this);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mComponentsManager.unregisterSensors(this);
+        componentsManager.unregisterSensors(this);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mComponentsManager.closeAll();
+        componentsManager.closeAll();
     }
 
     @Override
@@ -61,13 +76,13 @@ public class MainActivity extends Activity implements
         final float value = event.values[0];
 
         if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
-            if (mWorkingModeHandler.getCurrentMode() == WorkingModeHandler.WorkingMode.MODE_TEMPERATURE) {
+            if (workingModeHandler.getCurrentMode() == WorkingModeHandler.WorkingMode.MODE_TEMPERATURE) {
                 updateDisplay(String.valueOf(value));
             }
         }
 
         if (event.sensor.getType() == Sensor.TYPE_PRESSURE) {
-            if (mWorkingModeHandler.getCurrentMode() == WorkingModeHandler.WorkingMode.MODE_PRESSURE) {
+            if (workingModeHandler.getCurrentMode() == WorkingModeHandler.WorkingMode.MODE_PRESSURE) {
                 updateDisplay(String.valueOf(value));
             }
         }
@@ -83,13 +98,10 @@ public class MainActivity extends Activity implements
         try {
             switch (mode) {
                 case MODE_OFF:
-                    mComponentsManager.getDisplay().clear();
+                    componentsManager.getDisplay().clear();
                     break;
                 case MODE_TEMPERATURE:
-
-                    break;
                 case MODE_PRESSURE:
-
                     break;
             }
         }
@@ -97,20 +109,25 @@ public class MainActivity extends Activity implements
     }
 
     @Override
-    public void onButtonEvent(Button button, boolean b) {
-        Log.d(TAG, "Clicked button " + button.toString() + " value " + b);
+    public void onButtonEvent(Button button, boolean pressed) {
+        Log.d(TAG, "Clicked button " + button.toString() + " value " + pressed);
 
         try {
-            if (button.toString().equals(mComponentsManager.getButtonA().toString())) {
-                mComponentsManager.getRedLed().setValue(b);
-            } else if (button.toString().equals(mComponentsManager.getButtonB().toString())) {
-                mComponentsManager.getGreenLed().setValue(b);
-            } else if (button.toString().equals(mComponentsManager.getButtonC().toString())) {
-                mComponentsManager.getBlueLed().setValue(b);
+            if (button.toString().equals(componentsManager.getButtonA().toString())) {
+                componentsManager.getRedLed().setValue(pressed);
+                if (!pressed) workingModeHandler.toggleMode();
             }
+            else if (button.toString().equals(componentsManager.getButtonB().toString())) {
+                componentsManager.getGreenLed().setValue(pressed);
+                if (pressed) rainbowBumpHandler.startBumping();
+                else rainbowBumpHandler.clearRainbow();
 
-            if (!b)
-                mWorkingModeHandler.toggleMode();
+            }
+            else if (button.toString().equals(componentsManager.getButtonC().toString())) {
+                componentsManager.getBlueLed().setValue(pressed);
+                if (pressed) speakerTonesHandler.playTone();
+                else speakerTonesHandler.stopPlaying();
+            }
         }
         catch (IOException e) {
             Log.e(TAG, "Error : ", e);
@@ -119,9 +136,9 @@ public class MainActivity extends Activity implements
     }
 
     private void updateDisplay(String value) {
-        if (mComponentsManager.getDisplay() != null) {
+        if (componentsManager.getDisplay() != null) {
             try {
-                mComponentsManager.getDisplay().display(value);
+                componentsManager.getDisplay().display(value);
             } catch (IOException e) {
                 Log.e(TAG, "Error updating display", e);
             }
