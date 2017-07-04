@@ -21,11 +21,11 @@ import java.io.IOException;
  * Handling all interaction and user experience here:
  * The logic goes like this:
  * - When the app starts, everything is off
- * - Pressing any capacitive button will light the led above it.
+ * - Pressing any capacitive button will light the led above it and play feedback sound
  * - Pressing capacitive button A will toggle between different working modes,
  *   defined in {@link WorkingModeHandler.WorkingMode}, showing result on display
- * - Pressing capacitive button B will light up led strip with random colours. // TODO
- * - Pressing capacitive button C will play a random tone. // TODO
+ * - Pressing capacitive button B will light up led strip with random colours.
+ * - Pressing capacitive button C will..= // TODO
  */
 public class MainActivity extends Activity implements
         SensorEventListener, WorkingModeHandler.OnModeChangedListener, Button.OnButtonEventListener {
@@ -37,6 +37,9 @@ public class MainActivity extends Activity implements
     private WorkingModeHandler workingModeHandler;
     private RainbowBumpHandler rainbowBumpHandler;
     private SpeakerTonesHandler speakerTonesHandler;
+
+    private long currentUpdateTimestamp = 0;
+    private static final long MIN_DISPLAY_REFRESH_TIME_MS = 1000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +107,7 @@ public class MainActivity extends Activity implements
                 case MODE_PRESSURE:
                     break;
             }
+            currentUpdateTimestamp = 0;
         }
         catch (IOException ignore) { }
     }
@@ -113,6 +117,9 @@ public class MainActivity extends Activity implements
         Log.d(TAG, "Clicked button " + button.toString() + " value " + pressed);
 
         try {
+            if (pressed) speakerTonesHandler.playTone(440);
+            else speakerTonesHandler.playTone(110);
+
             if (button.toString().equals(componentsManager.getButtonA().toString())) {
                 componentsManager.getRedLed().setValue(pressed);
                 if (!pressed) workingModeHandler.toggleMode();
@@ -125,8 +132,6 @@ public class MainActivity extends Activity implements
             }
             else if (button.toString().equals(componentsManager.getButtonC().toString())) {
                 componentsManager.getBlueLed().setValue(pressed);
-                if (pressed) speakerTonesHandler.playTone();
-                else speakerTonesHandler.stopPlaying();
             }
         }
         catch (IOException e) {
@@ -136,6 +141,10 @@ public class MainActivity extends Activity implements
     }
 
     private void updateDisplay(String value) {
+        // don't let display refresh too often
+        if (currentUpdateTimestamp > System.currentTimeMillis() - MIN_DISPLAY_REFRESH_TIME_MS) return;
+        else currentUpdateTimestamp = System.currentTimeMillis();
+
         if (componentsManager.getDisplay() != null) {
             try {
                 componentsManager.getDisplay().display(value);

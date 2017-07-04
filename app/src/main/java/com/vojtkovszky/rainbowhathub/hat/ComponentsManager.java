@@ -76,6 +76,7 @@ public class ComponentsManager {
                 case DISPLAY:
                     display = DriverFactory.openDisplay();
                     display.clear();
+                    display.setEnabled(true);
                     break;
 
                 case LED_STRIP:
