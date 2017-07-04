@@ -18,16 +18,19 @@ public class RainbowBumpHandler {
 
     private Apa102 ledStrip;
     private Handler handler = new Handler();
-    private int currentLedIndex = 0;
     private int[] colors = new int[7];
 
     private volatile boolean bumpingInProgress = false;
+    private volatile int currentLedIndex = 0;
 
     public RainbowBumpHandler(Apa102 ledStrip) {
         this.ledStrip = ledStrip;
     }
 
     public void startBumping() {
+        if (bumpingInProgress)
+            return;
+
         bumpingInProgress = true;
         scheduleBump();
     }
@@ -37,11 +40,21 @@ public class RainbowBumpHandler {
             bumpingInProgress = false;
             currentLedIndex = 0;
 
+            ledStrip.setBrightness(0);
             colors = new int[7];
             ledStrip.write(colors);
-            ledStrip.setBrightness(0);
         }
         catch (IOException ignore) { }
+    }
+
+    private void scheduleBump() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (bumpingInProgress && currentLedIndex < 7)
+                    bumpAnotherLed();
+            }
+        }, LED_BUMP_DURATION_MS);
     }
 
     private void bumpAnotherLed() {
@@ -58,15 +71,5 @@ public class RainbowBumpHandler {
 
         }
         catch (IOException ignore) { }
-    }
-
-    private void scheduleBump() {
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (bumpingInProgress && currentLedIndex < 7)
-                    bumpAnotherLed();
-            }
-        }, LED_BUMP_DURATION_MS);
     }
 }

@@ -39,7 +39,7 @@ public class MainActivity extends Activity implements
     private SpeakerTonesHandler speakerTonesHandler;
 
     private long currentUpdateTimestamp = 0;
-    private static final long MIN_DISPLAY_REFRESH_TIME_MS = 1000;
+    private static final long MIN_DISPLAY_REFRESH_TIME_MS = 2000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
